@@ -9,7 +9,7 @@ import paramiko
 
 HOST = "49.13.6.108"
 USER = "root"
-PASSWORD = os.environ.get("AVA_SSH_PASS", "ava74826+++===")
+PASSWORD = os.environ.get("AVA_SSH_PASS", "")
 REPO_URL = "https://github.com/sivanpabraj/AVA-CDN.git"
 BRANCH = "cursor/germany-cdn-origin-setup-132b"
 INSTALL_DIR = "/opt/ava-cdn/avashop.online"
