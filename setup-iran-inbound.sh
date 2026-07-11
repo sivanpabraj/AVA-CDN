@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# Iran-optimized inbound: User → Iran (80.249.112.56) → Rathole → Germany Xray
+# Iran-optimized inbound: User → Iran → Rathole → Germany Xray
+# Safe: uses x-ui restart-xray only (not full panel restart)
 set -euo pipefail
 
 IRAN_IP="80.249.112.56"
-IRAN_PASS="${IRAN_PASS:-}"
 GERMANY_IP="49.13.6.108"
-GERMANY_PASS="${GERMANY_PASS:-}"
 INSTALL_DIR="/opt/ava-cdn/iran-inbound"
 IRAN_PORT="${IRAN_PORT:-2088}"
 GERMANY_PORT="${GERMANY_PORT:-18443}"
-RATHOLE_TOKEN="${RATHOLE_TOKEN:-avavlessiran$(openssl rand -hex 8)}"
+RATHOLE_TOKEN="${RATHOLE_TOKEN:-avavlessiran174062832f02}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 info() { echo -e "${CYAN}→${NC} $*"; }
@@ -21,25 +20,48 @@ rand_uuid() {
 
 deploy_germany() {
   local uuid="$1"
-  info "Germany: adding VLESS-TCP inbound on 127.0.0.1:${GERMANY_PORT}"
+  info "Germany: VLESS-TCP on 127.0.0.1:${GERMANY_PORT} (x-ui)"
 
   python3 - <<PY
-import sqlite3, json
+import sqlite3, json, time
 uid = "${uuid}"
+email = "iran@avashop.online"
 port = ${GERMANY_PORT}
-settings = json.dumps({"clients": [{"id": uid, "email": "iran@avashop.online", "flow": ""}], "decryption": "none", "fallbacks": []})
+now = int(time.time() * 1000)
+settings = json.dumps({"clients": [], "decryption": "none", "fallbacks": []})
 stream = json.dumps({"network": "tcp", "security": "none", "tcpSettings": {"header": {"type": "none"}, "acceptProxyProtocol": False}})
 sniff = json.dumps({"enabled": True, "destOverride": ["http", "tls"]})
-conn = sqlite3.connect("/etc/x-ui/x-ui.db")
-conn.execute("DELETE FROM inbounds WHERE tag='inbound-iran-vless'")
-conn.execute(
+
+con = sqlite3.connect("/etc/x-ui/x-ui.db")
+cur = con.cursor()
+
+cur.execute("DELETE FROM inbounds WHERE tag='inbound-iran-vless'")
+cur.execute(
     "INSERT INTO inbounds (user_id,up,down,total,remark,enable,expiry_time,listen,port,protocol,settings,stream_settings,tag,sniffing) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
     (1, 0, 0, 0, "Iran-VLESS-TCP", 1, 0, "127.0.0.1", port, "vless", settings, stream, "inbound-iran-vless", sniff),
 )
-conn.commit()
+inbound_id = cur.lastrowid
+
+cur.execute("SELECT id FROM clients WHERE email=?", (email,))
+row = cur.fetchone()
+if row:
+    client_id = row[0]
+    cur.execute("UPDATE clients SET uuid=?, enable=1, updated_at=? WHERE id=?", (uid, now, client_id))
+else:
+    cur.execute(
+        "INSERT INTO clients (email, uuid, enable, flow, security, total_gb, expiry_time, reset, created_at, updated_at) VALUES (?, ?, 1, '', '', 0, 0, 0, ?, ?)",
+        (email, uid, now, now),
+    )
+    client_id = cur.lastrowid
+
+cur.execute("DELETE FROM client_inbounds WHERE inbound_id=?", (inbound_id,))
+cur.execute("INSERT INTO client_inbounds (client_id, inbound_id, flow_override, created_at) VALUES (?, ?, '', ?)", (client_id, inbound_id, now))
+cur.execute("DELETE FROM client_traffics WHERE inbound_id=? AND email=?", (inbound_id, email))
+cur.execute("INSERT INTO client_traffics (inbound_id, enable, email, up, down, expiry_time, total, reset, last_online) VALUES (?, 1, ?, 0, 0, 0, 0, 0, 0)", (inbound_id, email))
+con.commit()
+con.close()
 PY
 
-  # Update rathole client
   if ! grep -q 'germany_vless_iran' /etc/rathole/client.toml 2>/dev/null; then
     cat >> /etc/rathole/client.toml <<EOF
 
@@ -47,37 +69,11 @@ PY
 token = "${RATHOLE_TOKEN}"
 local_addr = "127.0.0.1:${GERMANY_PORT}"
 EOF
-  else
-    sed -i "s|token = \".*\"|token = \"${RATHOLE_TOKEN}\"|" /etc/rathole/client.toml
   fi
 
+  info "Restarting xray only (SS users: ~1s blip, not full panel restart)..."
   x-ui restart-xray
-  systemctl restart rathole 2>/dev/null || pkill -HUP rathole 2>/dev/null || true
   ok "Germany inbound ready (127.0.0.1:${GERMANY_PORT})"
-}
-
-deploy_iran() {
-  info "Iran: exposing VLESS via Rathole on 0.0.0.0:${IRAN_PORT}"
-
-  if ! grep -q 'germany_vless_iran' /etc/rathole/server.toml 2>/dev/null; then
-    cat >> /etc/rathole/server.toml <<EOF
-
-[server.services.germany_vless_iran]
-token = "${RATHOLE_TOKEN}"
-bind_addr = "0.0.0.0:${IRAN_PORT}"
-EOF
-  fi
-
-  # Fix dead HAProxy backends → use Rathole local SS tunnel
-  if grep -q '49.13.6.108:40915' /etc/haproxy/haproxy.cfg; then
-    sed -i 's|server de_ss1 49.13.6.108:40915|server de_ss1 127.0.0.1:19454|' /etc/haproxy/haproxy.cfg
-    sed -i 's|server de_ss2 49.13.6.108:26909|server de_ss2 127.0.0.1:19454|' /etc/haproxy/haproxy.cfg
-    sed -i 's|server de_main 49.13.6.108:46100|server de_main 127.0.0.1:'"${IRAN_PORT}"'|' /etc/haproxy/haproxy.cfg
-    systemctl reload haproxy 2>/dev/null || systemctl restart haproxy
-  fi
-
-  systemctl restart rathole
-  ok "Iran entry ready (${IRAN_IP}:${IRAN_PORT})"
 }
 
 save_config() {
@@ -92,10 +88,9 @@ save_config() {
   "port": ${IRAN_PORT},
   "network": "tcp",
   "security": "none",
-  "path": "",
-  "note": "Iran relay → Rathole → Germany. NO Cloudflare. For users inside Iran.",
   "alt_port_haproxy": 444,
-  "latency_expected_ms": 80
+  "note": "Iran relay → Rathole → Germany. NO Cloudflare. For users inside Iran.",
+  "ss_users_port": 1080
 }
 EOF
   chmod 600 "${INSTALL_DIR}/inbound.json"
@@ -104,14 +99,15 @@ EOF
 main() {
   local uuid
   uuid="$(rand_uuid)"
-  echo -e "${BOLD}AVA CDN — Iran Inbound Setup${NC}"
-  deploy_germany
+  echo -e "${BOLD}AVA CDN — Iran Inbound Setup (Germany side)${NC}"
+  deploy_germany "${uuid}"
   save_config "${uuid}"
   echo ""
   echo -e "${BOLD}${GREEN}Iran VLESS Link:${NC}"
   echo "vless://${uuid}@${IRAN_IP}:${IRAN_PORT}?type=tcp&security=none#avashop-iran"
   echo ""
-  echo "Also via HAProxy port 444 on Iran"
+  echo "Then on Iran: bash setup-iran-iran-side.sh"
+  echo "SS existing users: ${IRAN_IP}:1080 (unchanged)"
 }
 
 main "$@"

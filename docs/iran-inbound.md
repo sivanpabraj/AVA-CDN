@@ -1,4 +1,4 @@
-# اینباند مخصوص داخل ایران
+# اینباند مخصوص داخل ایران (تانل Rathole)
 
 ## مسیر (سریع — بدون Cloudflare)
 
@@ -10,7 +10,11 @@
 
 ---
 
-## اتصال VLESS-TCP
+## لینک VLESS فعال
+
+```
+vless://19a9bb1b-05e9-45c1-a0eb-1c5bc4d19d10@80.249.112.56:2088?type=tcp&security=none#avashop-iran
+```
 
 | پارامتر | مقدار |
 |---------|-------|
@@ -18,16 +22,19 @@
 | Network | TCP |
 | Address | `80.249.112.56` |
 | Port | `2088` (یا `444` از HAProxy) |
+| UUID | `19a9bb1b-05e9-45c1-a0eb-1c5bc4d19d10` |
 | Security | none |
 | Fragment | **خاموش** |
 
-### لینک
+---
 
-بعد از نصب:
+## کاربران SS موجود (تغییر نکرده)
 
-```bash
-cat /opt/ava-cdn/iran-inbound/inbound.json
-```
+| پارامتر | مقدار |
+|---------|-------|
+| Address | `80.249.112.56` |
+| Port | `1080` |
+| Method | chacha20-ietf-poly1305 |
 
 ---
 
@@ -36,25 +43,39 @@ cat /opt/ava-cdn/iran-inbound/inbound.json
 1. Import لینک VLESS
 2. **Fragment را خاموش کنید**
 3. TLS/Security = none
-4. تست اتصال
+4. تست واقعی: باز کردن `https://www.google.com`
 
 ---
 
 ## مقایسه سرعت
 
-| مسیر | تأخیر از ایران |
-|------|----------------|
-| `de.avashop.online` (CDN gRPC) | ~9 ثانیه |
-| `80.249.112.56:2088` (ایران رله) | ~80ms |
+| مسیر | تأخیر |
+|------|-------|
+| `de.avashop.online` (CDN gRPC) | ~۵۰۰ms+ |
+| `80.249.112.56:2088` (ایران رله) | ~۴۲۰ms |
+| `80.249.112.56:1080` (SS کاربران) | ~۴۰۰ms |
 
 ---
 
-## نصب روی سرور
+## نصب / تعمیر
 
 ```bash
-# روی آلمان
+# آلمان
 sudo bash setup-iran-inbound.sh
 
-# سپس روی ایران (از آلمان)
-sshpass -p 'PASS' ssh root@80.249.112.56 'bash -s' < setup-iran-iran-side.sh
+# ایران (بدون قطع کاربران)
+sudo bash setup-iran-iran-side.sh
 ```
+
+جزئیات معماری: [tunnel-architecture.md](tunnel-architecture.md)
+
+---
+
+## ⚠️ مهم — قطع نشدن کاربران
+
+روی سرور ایران **هرگز** این را نزنید:
+```bash
+systemctl restart rathole   # باعث قطع لحظه‌ای همه کاربران می‌شود
+```
+
+از `rathole-guard.service` استفاده کنید (در `setup-iran-iran-side.sh`).
