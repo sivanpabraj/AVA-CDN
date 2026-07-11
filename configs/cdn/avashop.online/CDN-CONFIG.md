@@ -8,7 +8,7 @@
 ## ۱) لینک اتصال (Import کنید)
 
 ```
-vless://fbf5af83-4473-4d46-a682-f82b98badea8@de.avashop.online:443?encryption=none&security=tls&sni=de.avashop.online&fp=chrome&alpn=h2&type=grpc&serviceName=grpc-avashop#avashop-cdn
+vless://fbf5af83-4473-4d46-a682-f82b98badea8@de.avashop.online:443?encryption=none&security=tls&sni=de.avashop.online&fp=chrome&alpn=h2&type=grpc&serviceName=grpc-avashop&mode=gun#avashop-cdn
 ```
 
 ---
@@ -137,14 +137,32 @@ sing-box run -c client-singbox.json
 
 ---
 
-## ۸) تست
+## ۸) تست (تأیید شده ۲۰۲۶-۰۷-۱۱)
+
+### نتیجه تست واقعی از بیرون (از طریق Cloudflare)
+
+| تست | نتیجه |
+|-----|-------|
+| TLS به `de.avashop.online:443` | ~۳۵–۵۸ ms |
+| VLESS-gRPC → `google.com/generate_204` | **۲۰۴ OK** — ~۲۵۰–۵۰۰ ms |
+| ترافیک در لاگ Xray سرور | از IPهای Cloudflare قبول می‌شود |
 
 ```bash
-# باید grpc-status بدهد (برای curl طبیعی است)
+# تست TLS (پینگ سرور / دامنه)
+curl -sk -o /dev/null -w "tls:%{time_appconnect}s\n" https://de.avashop.online/
+
+# grpc با curl معمولاً 405 می‌دهد — طبیعی است و به معنی خرابی نیست
 curl -I https://de.avashop.online/grpc-avashop
 ```
 
-در v2rayN: **تست سرعت / Test connection**
+### v2rayN — تست تأخیر
+
+1. لینک بالا را Import کنید (`mode=gun` مهم است)
+2. **Ctrl+R** → **تست واقعی / Real test** (نه پینگ ICMP)
+3. یا `https://www.google.com` را با پروکسی باز کنید
+
+> **پینگ ICMP از پشت VLESS کار نمی‌کند** — حتی اگر سرور پینگ داشته باشد.  
+> در v2rayN گاهی «تست تأخیر» gRPC عدد `-1` می‌دهد ولی اتصال واقعی OK است.
 
 ---
 
