@@ -45,5 +45,26 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  xray:
+    image: teddysun/xray:25.2.21
+    container_name: ava-avashop-xray
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    expose:
+      - "2096"
+    volumes:
+      - ./xray/config.json:/etc/xray/config.json:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+
 volumes:
   nginx_cache:
