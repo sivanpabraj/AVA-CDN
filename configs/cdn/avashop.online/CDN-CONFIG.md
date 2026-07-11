@@ -80,7 +80,19 @@ curl http://127.0.0.1/health
 ## ۵) v2rayN
 
 1. لینک بالا را Import کنید
-2. تنظیمات دستی اگر لازم شد:
+2. **تنظیمات DNS (مهم — برای پینگ/سرعت پشت اینباند):**
+
+| فیلد | مقدار |
+|------|-------|
+| Remote DNS | `https://1.1.1.1/dns-query` |
+| Domestic DNS | `localhost` |
+| Domain strategy | `IPIfNonMatch` |
+
+3. **تست واقعی:**
+   - «تست سرعت واقعی» یا باز کردن `https://www.google.com`
+   - **پینگ ICMP از پشت VLESS معمولاً کار نمی‌کند** — این طبیعی است
+
+4. تنظیمات دستی:
 
 | فیلد | مقدار |
 |------|-------|
@@ -140,6 +152,8 @@ curl -I https://de.avashop.online/grpc-avashop
 
 | مشکل | راه‌حل |
 |------|--------|
+| پینگ سرور خوبه ولی **پشت اینباند پینگ نمیده** | **طبیعی است** — VLESS ICMP را رد نمی‌کند. تست با باز کردن سایت یا Real delay |
+| سایت باز نمی‌شود | Remote DNS = `1.1.1.1` در v2rayN |
 | وصل نمی‌شود | gRPC در Cloudflare فعال باشد |
 | خطای TLS | SSL = Full strict + Origin cert |
 | کند است | Fragment را خاموش کنید |

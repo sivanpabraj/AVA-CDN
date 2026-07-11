@@ -1,5 +1,12 @@
 {
   "log": { "loglevel": "warning" },
+  "dns": {
+    "servers": [
+      "1.1.1.1",
+      "8.8.8.8",
+      "localhost"
+    ]
+  },
   "inbounds": [
     {
       "tag": "vless-grpc-cdn",
@@ -22,20 +29,37 @@
           "serviceName": "grpc-avashop",
           "multiMode": false
         },
-        "security": "none"
+        "security": "none",
+        "sockopt": {
+          "tcpFastOpen": true,
+          "tcpNoDelay": true
+        }
       },
       "sniffing": {
         "enabled": true,
-        "destOverride": ["http", "tls", "quic"]
+        "destOverride": ["http", "tls", "quic", "fakedns"],
+        "routeOnly": false
       }
     }
   ],
   "outbounds": [
-    { "tag": "direct", "protocol": "freedom" },
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIPv4"
+      }
+    },
     { "tag": "block", "protocol": "blackhole" }
   ],
   "routing": {
     "domainStrategy": "AsIs",
-    "rules": []
+    "rules": [
+      {
+        "type": "field",
+        "outboundTag": "direct",
+        "network": "tcp,udp"
+      }
+    ]
   }
 }
