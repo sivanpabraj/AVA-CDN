@@ -1,0 +1,17 @@
+{
+  "remarks": "avashop CDN — VLESS-gRPC",
+  "protocol": "vless",
+  "address": "de.avashop.online",
+  "port": 443,
+  "id": "fbf5af83-4473-4d46-a682-f82b98badea8",
+  "aid": "0",
+  "net": "grpc",
+  "type": "none",
+  "host": "",
+  "path": "grpc-avashop",
+  "tls": "tls",
+  "sni": "de.avashop.online",
+  "alpn": "h2",
+  "fp": "chrome",
+  "insecure": 0
+}
