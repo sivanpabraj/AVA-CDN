@@ -19,6 +19,7 @@ out/
 .env
 .env.*
 !.env.example
+/opt/ava-cdn/
 *.pem
 *.key
 *.crt

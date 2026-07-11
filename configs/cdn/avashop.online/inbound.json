@@ -1,0 +1,18 @@
+{
+  "name": "avashop-cdn-grpc",
+  "protocol": "vless",
+  "uuid": "fbf5af83-4473-4d46-a682-f82b98badea8",
+  "address": "de.avashop.online",
+  "port": 443,
+  "network": "grpc",
+  "serviceName": "grpc-avashop",
+  "security": "tls",
+  "sni": "de.avashop.online",
+  "alpn": ["h2"],
+  "fingerprint": "chrome",
+  "path": "/grpc-avashop",
+  "flow": "",
+  "cdn": "cloudflare",
+  "origin_ip": "49.13.6.108",
+  "note": "Deploy origin on Germany. Point de.avashop.online to Cloudflare Proxied."
+}
