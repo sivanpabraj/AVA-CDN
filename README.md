@@ -54,6 +54,8 @@ sudo bash setup.sh --kharej-cdn
 ```
 AVA-CDN/
 ├── setup.sh                  # Main installer (single file)
+├── setup-avashop.sh          # One-shot deploy for avashop.online
+├── sites/avashop.online/     # Domain-specific nginx + compose
 ├── .env.example              # Environment template
 ├── docs/
 │   ├── cloudflare-setup.md   # CDN DNS/SSL/cache guide
@@ -70,17 +72,34 @@ AVA-CDN/
 - **Never commit** `.env` or server passwords to git
 - **Rotate** server password if it was shared in chat
 
+## avashop.online (CDN separate from tunnel)
+
+Pre-built site profile for **avashop.online** on Germany server `49.13.6.108`:
+
+| Hostname | Cloudflare | Role |
+|----------|------------|------|
+| `avashop.online`, `www`, `de` | **Proxied** (orange) | Shop CDN |
+| `tunnel.avashop.online` | **DNS only** (grey) | Tunnel — separate |
+
+```bash
+sudo bash setup-avashop.sh
+```
+
+Full guide: [docs/avashop.online-setup.md](docs/avashop.online-setup.md)
+
 ## Germany server reference
 
 | Item | Value |
 |------|-------|
 | IP | `49.13.6.108` |
+| Domain | `avashop.online` |
 | Role | CDN Origin (Kharej) |
-| Install path | `/opt/ava-cdn/` |
-| Logs | `/var/log/ava-cdn-setup.log` |
+| Install path | `/opt/ava-cdn/avashop.online/` |
+| Logs | `/var/log/ava-cdn-avashop-setup.log` |
 
 ## Documentation
 
+- [avashop.online setup (CDN vs tunnel)](docs/avashop.online-setup.md)
 - [Cloudflare CDN setup](docs/cloudflare-setup.md)
 - [Client configs (VLESS-gRPC / Sing-box)](docs/client-configs.md)
 - [Troubleshooting](docs/troubleshooting.md)
