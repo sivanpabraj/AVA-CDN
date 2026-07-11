@@ -72,6 +72,17 @@ AVA-CDN/
 - **Never commit** `.env` or server passwords to git
 - **Rotate** server password if it was shared in chat
 
+## CDN config package (deploy yourself)
+
+Full CDN configs for Cloudflare + Germany origin — **no Iran server**:
+
+- Guide: [configs/cdn/avashop.online/CDN-CONFIG.md](configs/cdn/avashop.online/CDN-CONFIG.md)
+- VLESS link: [configs/cdn/avashop.online/vless-link.txt](configs/cdn/avashop.online/vless-link.txt)
+
+```text
+vless://fbf5af83-4473-4d46-a682-f82b98badea8@de.avashop.online:443?encryption=none&security=tls&sni=de.avashop.online&fp=chrome&alpn=h2&type=grpc&serviceName=grpc-avashop#avashop-cdn
+```
+
 ## avashop.online (CDN separate from tunnel)
 
 Pre-built site profile for **avashop.online** on Germany server `49.13.6.108`:

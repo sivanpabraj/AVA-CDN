@@ -1,0 +1,41 @@
+{
+  "log": { "level": "warn" },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "listen": "127.0.0.1",
+      "listen_port": 10808,
+      "tag": "mixed-in"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "avashop-cdn",
+      "server": "de.avashop.online",
+      "server_port": 443,
+      "uuid": "fbf5af83-4473-4d46-a682-f82b98badea8",
+      "flow": "",
+      "tls": {
+        "enabled": true,
+        "server_name": "de.avashop.online",
+        "alpn": ["h2"],
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "grpc",
+        "service_name": "grpc-avashop",
+        "idle_timeout": "15s",
+        "ping_timeout": "15s"
+      }
+    },
+    { "type": "direct", "tag": "direct" },
+    { "type": "block", "tag": "block" }
+  ],
+  "route": {
+    "rules": [{ "outbound": "avashop-cdn" }]
+  }
+}

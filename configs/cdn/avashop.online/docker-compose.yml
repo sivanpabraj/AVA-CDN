@@ -1,0 +1,23 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ava-cdn-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-origin.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - /var/www/acme:/var/www/acme:ro
+    depends_on:
+      - xray
+
+  xray:
+    image: teddysun/xray:25.2.21
+    container_name: ava-cdn-xray
+    restart: unless-stopped
+    expose:
+      - "2096"
+    volumes:
+      - ./xray-config.json:/etc/xray/config.json:ro
